@@ -1,0 +1,6 @@
+{
+  "name": "Aikyam Website",
+  "description": "A beautifully crafted website for Aikyam featuring 3D animations, interactive components, and fluid designs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
