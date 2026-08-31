@@ -84,9 +84,19 @@ export default function Home() {
 
     // 4. Hash change listener for direct navigation & back/forward buttons
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash) {
-        const el = document.getElementById(hash);
+      const rawHash = window.location.hash.replace('#', '').toLowerCase();
+      if (rawHash) {
+        let el = document.getElementById(rawHash);
+        if (!el && (rawHash.startsWith('service-') || [
+          'artificial-intelligence-solutions',
+          'intelligent-automation',
+          'custom-software-development',
+          'cloud-devops-services',
+          'cybersecurity-compliance',
+          'data-analytics',
+        ].includes(rawHash))) {
+          el = document.getElementById('services');
+        }
         if (el) {
           el.scrollIntoView({ behavior: 'smooth' });
         }

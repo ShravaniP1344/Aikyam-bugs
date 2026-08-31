@@ -8,12 +8,12 @@ const quickLinks = [
 ] as const;
 
 const serviceLinks = [
-  'Artificial Intelligence Solutions',
-  'Intelligent Automation',
-  'Custom Software Development',
-  'Cloud & DevOps Services',
-  'Cybersecurity & Compliance',
-  'Data & Analytics',
+  { title: 'Artificial Intelligence Solutions', slug: 'artificial-intelligence-solutions', index: 0 },
+  { title: 'Intelligent Automation', slug: 'intelligent-automation', index: 1 },
+  { title: 'Custom Software Development', slug: 'custom-software-development', index: 2 },
+  { title: 'Cloud & DevOps Services', slug: 'cloud-devops-services', index: 3 },
+  { title: 'Cybersecurity & Compliance', slug: 'cybersecurity-compliance', index: 4 },
+  { title: 'Data & Analytics', slug: 'data-analytics', index: 5 },
 ] as const;
 
 // Social links temporarily disabled until official company pages are live
@@ -58,6 +58,16 @@ const contactItems = [
 ] as const;
 
 export const Footer = () => {
+  const handleServiceClick = (e: React.MouseEvent<HTMLAnchorElement>, index: number, slug: string) => {
+    e.preventDefault();
+    const servicesSection = document.getElementById('services');
+    if (servicesSection) {
+      servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.history.pushState(null, '', `#${slug}`);
+      window.dispatchEvent(new CustomEvent('aikyam:select-service', { detail: { index, slug } }));
+    }
+  };
+
   return (
     <footer className="site-footer">
       <div className="container footer-inner">
@@ -114,9 +124,13 @@ export const Footer = () => {
           <h2 className="footer-column-title">Services</h2>
           <ul className="footer-link-list">
             {serviceLinks.map((service) => (
-              <li key={service}>
-                <a href="#services" aria-label={`${service} section`}>
-                  {service}
+              <li key={service.title}>
+                <a
+                  href={`#${service.slug}`}
+                  aria-label={`${service.title} section`}
+                  onClick={(e) => handleServiceClick(e, service.index, service.slug)}
+                >
+                  {service.title}
                 </a>
               </li>
             ))}

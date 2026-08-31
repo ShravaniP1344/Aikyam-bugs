@@ -282,6 +282,45 @@ export const ServicesSection = () => {
     return () => clearInterval(interval);
   }, [isSectionInView, isPaused, isHovered, isFocused, goNext]);
 
+  // External service selection event and hash navigation listener
+  useEffect(() => {
+    const handleSelectServiceEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ index: number; slug?: string }>;
+      if (typeof customEvent.detail?.index === 'number') {
+        const targetIdx = customEvent.detail.index;
+        if (targetIdx >= 0 && targetIdx < servicesData.length) {
+          handleUserAction();
+          selectService(targetIdx);
+        }
+      }
+    };
+
+    const handleHashCheck = () => {
+      const rawHash = window.location.hash.replace('#', '').toLowerCase();
+      if (!rawHash || rawHash === 'services') return;
+
+      const matchedIdx = servicesData.findIndex((s, idx) => {
+        const slug = s.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        return slug === rawHash || `service-${slug}` === rawHash || `service-${idx}` === rawHash;
+      });
+
+      if (matchedIdx !== -1) {
+        handleUserAction();
+        selectService(matchedIdx);
+      }
+    };
+
+    window.addEventListener('aikyam:select-service', handleSelectServiceEvent);
+    window.addEventListener('hashchange', handleHashCheck);
+
+    handleHashCheck();
+
+    return () => {
+      window.removeEventListener('aikyam:select-service', handleSelectServiceEvent);
+      window.removeEventListener('hashchange', handleHashCheck);
+    };
+  }, [selectService, handleUserAction]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     setMousePos({ x: e.clientX, y: e.clientY });
   }, []);
@@ -399,9 +438,12 @@ export const ServicesSection = () => {
               <div className="index-buttons-list" role="tablist" aria-label="Services List">
                 {servicesData.map((service, idx) => {
                   const isActive = idx === activeCapabilityIndex;
+                  const slug = service.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
                   return (
                     <button
                       key={service.title}
+                      id={`service-${slug}`}
+                      data-slug={slug}
                       role="tab"
                       aria-selected={isActive}
                       aria-label={`View ${service.title}`}

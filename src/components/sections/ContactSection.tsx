@@ -79,6 +79,8 @@ type ContactFormData = {
   companyWebsite: string;
 };
 
+type FieldErrors = Partial<Record<'name' | 'email' | 'subject' | 'message', string>>;
+
 const initialFormData: ContactFormData = {
   name: '',
   email: '',
@@ -87,16 +89,104 @@ const initialFormData: ContactFormData = {
   companyWebsite: '',
 };
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validateField = (field: keyof FieldErrors, value: string): string | undefined => {
+  if (field === 'name') {
+    if (!value.trim()) return 'Please enter your name.';
+  } else if (field === 'email') {
+    if (!value.trim()) return 'Please enter your email address.';
+    if (!EMAIL_REGEX.test(value.trim())) return 'Please enter a valid email address.';
+  } else if (field === 'subject') {
+    if (!value.trim()) return 'Please enter what you would like to build.';
+  } else if (field === 'message') {
+    if (!value.trim()) return 'Please tell us about your goals, challenges, or ideas.';
+    if (value.length > 500) return 'Maximum 500 characters allowed.';
+  }
+  return undefined;
+};
+
+const validateForm = (data: ContactFormData): FieldErrors => {
+  const errors: FieldErrors = {};
+
+  const nameError = validateField('name', data.name);
+  if (nameError) errors.name = nameError;
+
+  const emailError = validateField('email', data.email);
+  if (emailError) errors.email = emailError;
+
+  const subjectError = validateField('subject', data.subject);
+  if (subjectError) errors.subject = subjectError;
+
+  const messageError = validateField('message', data.message);
+  if (messageError) errors.message = messageError;
+
+  return errors;
+};
+
 export const ContactSection = () => {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const handleFieldChange = (field: keyof ContactFormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    const errorKey = field as keyof FieldErrors;
+    if (fieldErrors[errorKey]) {
+      const updatedError = validateField(errorKey, value);
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        if (updatedError) {
+          next[errorKey] = updatedError;
+        } else {
+          delete next[errorKey];
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value.slice(0, 500);
+    setFormData((prev) => ({ ...prev, message: value }));
+    if (fieldErrors.message) {
+      const updatedError = validateField('message', value);
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        if (updatedError) {
+          next.message = updatedError;
+        } else {
+          delete next.message;
+        }
+        return next;
+      });
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
+    const validationErrors = validateForm(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      setErrorMessage('');
+
+      if (validationErrors.name) {
+        document.getElementById('contact-name')?.focus();
+      } else if (validationErrors.email) {
+        document.getElementById('contact-email')?.focus();
+      } else if (validationErrors.subject) {
+        document.getElementById('contact-subject')?.focus();
+      } else if (validationErrors.message) {
+        document.getElementById('contact-message')?.focus();
+      }
+      return;
+    }
+
+    setFieldErrors({});
     setIsSubmitting(true);
     setErrorMessage('');
 
@@ -117,6 +207,7 @@ export const ContactSection = () => {
 
       setSubmitted(true);
       setFormData(initialFormData);
+      setFieldErrors({});
       window.setTimeout(() => setSubmitted(false), 6000);
     } catch (error) {
       setErrorMessage(
@@ -131,49 +222,33 @@ export const ContactSection = () => {
 
   return (
     <section id="contact" data-label="Contact">
-      <div className="container section-shell">
-        <div className="section-head">
-          <div>
-            <motion.span
-              className="section-kicker"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '0px 0px 180px 0px' }}
-              variants={kickerVariant}
-            >
-              LET'S BUILD TOGETHER
-            </motion.span>
-            <motion.h2
-              className="section-title"
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true, margin: '0px 0px 180px 0px' }}
-              variants={headingVariant}
-            >
-              Let's build
-              <br />
-              intelligence that lasts.
-            </motion.h2>
-          </div>
-
-          <motion.div
-            className="section-copy text-left"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '0px 0px 180px 0px' }}
-            variants={messageVariant}
-          >
-            <p className="font-semibold text-white dark:text-white light:text-slate-900 text-base leading-relaxed mb-1">
-              Every transformation begins with a conversation.
-            </p>
-            <p className="text-cyan-400 dark:text-cyan-300 light:text-sky-700 font-medium">
-              Let's explore what's possible.
-            </p>
-          </motion.div>
-        </div>
-
+      <div className="container section-shell contact-section-shell">
         <div className="contact-grid">
-          <div>
+          {/* Left Column: Heading + Contact Methods */}
+          <div className="contact-left-col">
+            <div className="contact-heading-group">
+              <motion.span
+                className="section-kicker"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '0px 0px 180px 0px' }}
+                variants={kickerVariant}
+              >
+                LET'S BUILD TOGETHER
+              </motion.span>
+              <motion.h2
+                className="section-title"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '0px 0px 180px 0px' }}
+                variants={headingVariant}
+              >
+                Let's build
+                <br />
+                intelligence that lasts.
+              </motion.h2>
+            </div>
+
             <motion.div
               className="contact-methods text-medium"
               initial="hidden"
@@ -181,7 +256,7 @@ export const ContactSection = () => {
               viewport={{ once: true, margin: '0px 0px 180px 0px' }}
               variants={methodListVariant}
             >
-              <motion.a className="contact-method" variants={methodCardVariant} href="tel:+919591491155">
+              <motion.a className="contact-method" variants={methodCardVariant} href="tel:+919730732164">
                 <div className="icon-pill text-[#72d7ff] p-3 rounded-full bg-[rgba(114,215,255,0.08)] border border-[rgba(114,215,255,0.18)]">
                   <Phone className="w-4 h-4" />
                 </div>
@@ -191,7 +266,7 @@ export const ContactSection = () => {
                 </div>
               </motion.a>
 
-              <motion.a className="contact-method" variants={methodCardVariant} href="mailto:info@aikyam.co">
+              <motion.a className="contact-method" variants={methodCardVariant} href="mailto:business@aikyamaisystem.com">
                 <div className="icon-pill text-[#72d7ff] p-3 rounded-full bg-[rgba(114,215,255,0.08)] border border-[rgba(114,215,255,0.18)]">
                   <Mail className="w-4 h-4" />
                 </div>
@@ -213,7 +288,23 @@ export const ContactSection = () => {
             </motion.div>
           </div>
 
-          <div>
+          {/* Right Column: Intro Copy + Contact Form */}
+          <div className="contact-right-col">
+            <motion.div
+              className="contact-intro-copy text-left"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '0px 0px 180px 0px' }}
+              variants={messageVariant}
+            >
+              <p className="contact-intro-heading font-semibold text-base leading-relaxed mb-1">
+                Every transformation begins with a conversation.
+              </p>
+              <p className="contact-intro-subheading font-medium">
+                Let's explore what's possible.
+              </p>
+            </motion.div>
+
             {submitted ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -232,6 +323,7 @@ export const ContactSection = () => {
               <motion.form
                 className="contact-form"
                 onSubmit={handleSubmit}
+                noValidate
                 initial="hidden"
                 whileInView="visible"
                 viewport={{ once: true, margin: '0px 0px 180px 0px' }}
@@ -250,65 +342,113 @@ export const ContactSection = () => {
                   />
                 </div>
 
-                <motion.div variants={formFieldVariant}>
+                <motion.div variants={formFieldVariant} className="contact-field-group">
                   <label className="sr-only" htmlFor="contact-name">Your Name</label>
                   <input
                     id="contact-name"
                     name="name"
                     type="text"
                     placeholder="Your Name"
-                    className="field"
+                    className={`field ${fieldErrors.name ? 'field-error' : ''}`}
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => handleFieldChange('name', e.target.value)}
                     autoComplete="name"
                     maxLength={120}
-                    required
+                    aria-invalid={Boolean(fieldErrors.name)}
+                    aria-describedby={fieldErrors.name ? 'contact-name-error' : undefined}
                   />
+                  {fieldErrors.name && (
+                    <span id="contact-name-error" className="contact-field-error" role="alert">
+                      {fieldErrors.name}
+                    </span>
+                  )}
                 </motion.div>
 
-                <motion.div variants={formFieldVariant}>
+                <motion.div variants={formFieldVariant} className="contact-field-group">
                   <label className="sr-only" htmlFor="contact-email">Work Email</label>
                   <input
                     id="contact-email"
                     name="email"
                     type="email"
                     placeholder="Work Email"
-                    className="field"
+                    className={`field ${fieldErrors.email ? 'field-error' : ''}`}
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) => handleFieldChange('email', e.target.value)}
                     autoComplete="email"
                     inputMode="email"
                     maxLength={254}
-                    required
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    aria-describedby={fieldErrors.email ? 'contact-email-error' : undefined}
                   />
+                  {fieldErrors.email && (
+                    <span id="contact-email-error" className="contact-field-error" role="alert">
+                      {fieldErrors.email}
+                    </span>
+                  )}
                 </motion.div>
 
-                <motion.div variants={formFieldVariant} style={{ gridColumn: '1 / -1' }}>
+                <motion.div
+                  variants={formFieldVariant}
+                  className="contact-field-group"
+                  style={{ gridColumn: '1 / -1' }}
+                >
                   <label className="sr-only" htmlFor="contact-subject">What would you like to build?</label>
                   <input
                     id="contact-subject"
                     name="subject"
                     type="text"
                     placeholder="What would you like to build?"
-                    className="field"
+                    className={`field ${fieldErrors.subject ? 'field-error' : ''}`}
                     value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                    onChange={(e) => handleFieldChange('subject', e.target.value)}
                     maxLength={180}
-                    required
+                    aria-invalid={Boolean(fieldErrors.subject)}
+                    aria-describedby={fieldErrors.subject ? 'contact-subject-error' : undefined}
                   />
+                  {fieldErrors.subject && (
+                    <span id="contact-subject-error" className="contact-field-error" role="alert">
+                      {fieldErrors.subject}
+                    </span>
+                  )}
                 </motion.div>
 
-                <motion.div variants={formFieldVariant} style={{ gridColumn: '1 / -1' }}>
+                <motion.div
+                  className="contact-message-group contact-field-group"
+                  variants={formFieldVariant}
+                  style={{ gridColumn: '1 / -1' }}
+                >
                   <label className="sr-only" htmlFor="contact-message">Tell us about your goals, challenges, or ideas</label>
                   <textarea
                     id="contact-message"
                     name="message"
                     placeholder="Tell us about your goals, challenges, or ideas..."
+                    className={fieldErrors.message ? 'field-error' : ''}
                     value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    maxLength={5000}
-                    required
+                    onChange={handleMessageChange}
+                    maxLength={500}
+                    aria-invalid={Boolean(fieldErrors.message)}
+                    aria-describedby={fieldErrors.message ? 'contact-message-error' : undefined}
                   />
+                  {fieldErrors.message && (
+                    <span id="contact-message-error" className="contact-field-error" role="alert">
+                      {fieldErrors.message}
+                    </span>
+                  )}
+                  <div className="contact-message-footer">
+                    {formData.message.length >= 500 ? (
+                      <span className="contact-char-limit-warning" role="alert" aria-live="polite">
+                        Maximum 500 characters allowed.
+                      </span>
+                    ) : (
+                      <span className="contact-char-limit-spacer" aria-hidden="true" />
+                    )}
+                    <span
+                      className={`contact-char-counter ${formData.message.length >= 500 ? 'at-limit' : ''}`}
+                      aria-live="polite"
+                    >
+                      {formData.message.length}/500
+                    </span>
+                  </div>
                 </motion.div>
 
                 {errorMessage && (

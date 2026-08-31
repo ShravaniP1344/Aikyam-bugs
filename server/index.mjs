@@ -391,7 +391,15 @@ async function handleContact(req, res) {
     const name = cleanSingleLine(body?.name, 120);
     const email = cleanSingleLine(body?.email, 254).toLowerCase();
     const subject = cleanSingleLine(body?.subject, 180);
-    const message = cleanMessage(body?.message, 5000);
+    const rawMessage = String(body?.message ?? '');
+
+    if (rawMessage.length > 500) {
+      return sendJson(res, 400, {
+        message: 'Maximum 500 characters allowed.',
+      });
+    }
+
+    const message = cleanMessage(body?.message, 500);
 
     if (name.length < 2 || subject.length < 3 || message.length < 10 || !isValidEmail(email)) {
       return sendJson(res, 400, {

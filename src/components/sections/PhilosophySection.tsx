@@ -40,7 +40,7 @@ export const PhilosophySection = () => {
             <p>Keep learning, researching, and improving so solutions remain intelligent, relevant, and future-ready.</p>
           </GlassCard>
           <GlassCard className="principle-card" delayClass="delay-2">
-            <span className="num">∞</span>
+            <span className="num">06</span>
             <h3>Purposeful Impact</h3>
             <p>Every algorithm has a purpose. Every innovation solves a real problem. Every solution strengthens connection.</p>
           </GlassCard>
